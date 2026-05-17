@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { Zen_Old_Mincho } from "next/font/google";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 const zenOld = Zen_Old_Mincho({
   subsets: ["latin"],
@@ -11,13 +9,9 @@ const zenOld = Zen_Old_Mincho({
 });
 
 export default function QuizHome() {
-  const [mode, setMode] = useState<"normal" | "time" | null>(null);
-  const [value, setValue] = useState<number | null>(null);
-  const router = useRouter();
-
 
   const playSound = () => {
-    const sound = new Audio("/sounds/データ表示3.mp3");
+    const sound = new Audio("/sounds/tocategory.mp3");
     sound.volume = 0.5;
     sound.play();
   };
