@@ -48,8 +48,7 @@ export default function PlayPage() {
   useEffect(() => {
     if (!currentQuiz) return;
 
-    setShowIntro(true);
-    playSound("nextquiz")
+    playSound("nextquiz");
 
     const timer = setTimeout(() => {
       setShowIntro(false);
@@ -178,6 +177,7 @@ export default function PlayPage() {
       return;
     }
 
+    setShowIntro(true); // ←ここへ移動
     setQuizIndex((prev) => prev + 1);
     setDisplayText("");
     setAnswer("");
