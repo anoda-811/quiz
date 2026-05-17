@@ -3,32 +3,52 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { quizzes } from "@/data/quizzes";
+import { useMemo } from "react";
 
 export default function PlayPage() {
   const params = useSearchParams();
   const router = useRouter();
 
-  const category = params.get("category") || "地理";
-
-  const allQuizzes = Object.values(quizzes).flat();
-
-  const quizList =
-    category === "ALL"
-      ? allQuizzes
-      : quizzes[
-          category as keyof typeof quizzes
-        ] || quizzes["地理"];
-
   const [quizIndex, setQuizIndex] = useState(0);
   const [displayText, setDisplayText] = useState("");
   const [isAnswering, setIsAnswering] = useState(false);
   const [answer, setAnswer] = useState("");
-  const [timeLeft, setTimeLeft] = useState(10);
+  const [timeLeft, setTimeLeft] = useState(15);
   const [showResult, setShowResult] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
+  const [aiQuizList, setAiQuizList] = useState<any[]>([]);
+  const [loadingAI, setLoadingAI] = useState(false);
+
+  const category = params.get("category") || "地理";
+
+  const allQuizzes = Object.values(quizzes).flat();
+
+  const shuffleArray = (array: any[]) => {
+    return [...array].sort(() => Math.random() - 0.5);
+  };
+
+  const quizList = useMemo(() => {
+    if (category === "AI出題") {
+      return aiQuizList;
+    }
+
+    if (category === "ALL") {
+      return shuffleArray(allQuizzes).slice(0, 10);
+    }
+
+    const categoryQuiz =
+      quizzes[
+        category as keyof typeof quizzes
+      ] || quizzes["地理"];
+
+    return shuffleArray(categoryQuiz).slice(0, 10);
+  }, [category, aiQuizList]);
 
   const currentQuiz = quizList[quizIndex];
+
+  const theme =
+  params.get("theme") || "";
 
   //--------------------------------
   // 音
@@ -43,6 +63,29 @@ export default function PlayPage() {
   };
 
   //--------------------------------
+  // AI取得用
+  //--------------------------------
+  useEffect(() => {
+    if (category !== "AI出題") return;
+
+    const fetchAIQuiz = async () => {
+      setLoadingAI(true);
+
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        body: JSON.stringify({ theme }),
+      });
+
+      const data = await res.json();
+
+      setAiQuizList(data);
+      setLoadingAI(false);
+    };
+
+    fetchAIQuiz();
+  }, [category, theme]);
+
+  //--------------------------------
   // 問題開始演出
   //--------------------------------
   useEffect(() => {
@@ -55,7 +98,7 @@ export default function PlayPage() {
     }, 2500);
 
     return () => clearTimeout(timer);
-  }, [quizIndex]);
+  }, [quizIndex, currentQuiz]);
 
   //--------------------------------
   // 問題文1文字表示
@@ -103,7 +146,7 @@ export default function PlayPage() {
         playSound("buzz");
 
         setIsAnswering(true);
-        setTimeLeft(10);
+        setTimeLeft(15);
       }
     };
 
@@ -120,10 +163,21 @@ export default function PlayPage() {
   //--------------------------------
   // 回答確定
   //--------------------------------
+  const normalize = (text: string) =>
+    text
+      .trim()
+      .toLowerCase()
+      .replace(/\s/g, "");
+
   const handleSubmit = () => {
-    const correct =
-      answer.trim().toLowerCase() ===
-      currentQuiz.answer.toLowerCase();
+    const userAnswer = normalize(answer);
+
+    const validAnswers = [
+      currentQuiz.answer,
+      ...(currentQuiz.aliases || [])
+    ].map(normalize);
+
+    const correct = validAnswers.includes(userAnswer);
 
     setIsCorrect(correct);
     setShowResult(true);
@@ -183,15 +237,31 @@ export default function PlayPage() {
     setAnswer("");
     setIsAnswering(false);
     setShowResult(false);
-    setTimeLeft(10);
+    setTimeLeft(15);
   };
 
-  //--------------------------------
-  // 全問題終了
-  //--------------------------------
-  if (!currentQuiz) {
-    router.push("/result");
-    return null;
+  // 
+  useEffect(() => {
+    if (
+      !loadingAI &&
+      quizList.length > 0 &&
+      quizIndex >= quizList.length
+    ) {
+      router.push("/result");
+    }
+  }, [
+    quizIndex,
+    quizList.length,
+    loadingAI,
+    router
+  ]);
+
+  if (loadingAI) {
+    return (
+      <main className="min-h-screen bg-black text-white flex items-center justify-center">
+        AIが問題生成中...
+      </main>
+    );
   }
 
   return (
@@ -199,17 +269,17 @@ export default function PlayPage() {
 
       {/* intro */}
       {showIntro ? (
-<div className="flex flex-col items-center justify-center min-h-screen text-center animate-pulse">
+        <div className="flex flex-col items-center justify-center min-h-screen text-center animate-pulse">
 
-  <h1 className="text-8xl md:text-9xl text-white">
-    Q{quizIndex + 1}
-  </h1>
+          <h1 className="text-8xl md:text-9xl text-white">
+            Q{quizIndex + 1}
+          </h1>
 
-  <p className="mt-6 text-xl text-gray-400 tracking-widest">
-    CATEGORY : {category}
-  </p>
+          <p className="mt-6 text-xl text-gray-400 tracking-widest">
+            CATEGORY : {category}
+          </p>
 
-</div>
+        </div>
       ) : (
         <>
           {/* 通常画面 */}
@@ -222,7 +292,10 @@ export default function PlayPage() {
           </p>
 
           <div className="border border-white w-[700px] h-[250px] rounded-2xl flex items-center justify-center text-3xl tracking-widest text-center px-8 shadow-[0_0_20px_rgba(255,255,255,0.2)]">
-            {displayText}
+            {showResult
+              ? currentQuiz.question
+              : displayText}
+
             {!isAnswering &&
               !showResult &&
               displayText && (
@@ -291,12 +364,9 @@ export default function PlayPage() {
                 あなたの回答：
                 {answer || "未回答"}
               </p>
-
-              {!isCorrect && (
-                <p className="text-gray-400">
-                  正解：{currentQuiz.answer}
-                </p>
-              )}
+              <p className="text-gray-400">
+                正解：{currentQuiz.answer}
+              </p>
 
               <button
                 onClick={handleNextQuestion}

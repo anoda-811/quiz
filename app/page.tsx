@@ -53,7 +53,7 @@ export default function QuizHome() {
           transition-all
         "
       >
-        ▶ START
+        はじめる
       </Link>
     </main>
   );

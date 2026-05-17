@@ -16,13 +16,18 @@ const categories = [
   "音楽",
   "スポーツ",
   "ALL",
+  "AI出題"
 ];
 
 export default function CategoryPage() {
   const router = useRouter();
 
   const handleSelect = (category: string) => {
-    router.push(`/play?category=${category}`)
+    if (category === "AI出題") {
+      router.push("/ai");
+    } else {
+      router.push(`/play?category=${category}`);
+    }
   };
 
   const playSound = () => {
