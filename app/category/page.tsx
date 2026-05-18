@@ -16,7 +16,6 @@ const categories = [
   "音楽",
   "スポーツ",
   "ALL",
-  "AI出題"
 ];
 
 export default function CategoryPage() {
