@@ -133,20 +133,23 @@ export default function PlayPage() {
   //--------------------------------
   // SPACE早押し
   //--------------------------------
+  const handleBuzz = () => {
+    if (
+      isAnswering ||
+      showResult ||
+      showIntro
+    ) return;
+
+    playSound("buzz");
+    setIsAnswering(true);
+    setTimeLeft(15);
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.code === "Space" &&
-        !isAnswering &&
-        !showResult &&
-        !showIntro
-      ) {
+      if (e.code === "Space") {
         e.preventDefault();
-
-        playSound("buzz");
-
-        setIsAnswering(true);
-        setTimeLeft(15);
+        handleBuzz();
       }
     };
 
@@ -282,34 +285,53 @@ export default function PlayPage() {
         </div>
       ) : (
         <>
-          {/* 通常画面 */}
-          <p className="text-gray-400 mb-4">
-            Q{quizIndex + 1}
+        {/* 通常画面 */}
+        <p className="text-gray-400 mb-4">
+          Q{quizIndex + 1}
+        </p>
+
+        <p className="text-gray-500 mb-8">
+          CATEGORY : {category}
+        </p>
+
+        <div
+          onClick={handleBuzz}
+          className="
+            border border-white
+            w-[700px]
+            h-[250px]
+            rounded-2xl
+            flex
+            items-center
+            justify-center
+            text-3xl
+            tracking-widest
+            text-center
+            px-8
+            shadow-[0_0_20px_rgba(255,255,255,0.2)]
+            cursor-pointer
+            active:scale-[0.99]
+            transition
+          "
+        >
+          {showResult
+            ? currentQuiz.question
+            : displayText}
+
+          {!isAnswering &&
+            !showResult &&
+            displayText && (
+              <span className="animate-pulse ml-2">
+                |
+              </span>
+            )}
+        </div>
+
+        {!isAnswering && !showResult && (
+          <p className="mt-8 text-gray-400 animate-pulse">
+            問題文TAP or SPACEで早押し！
           </p>
-
-          <p className="text-gray-500 mb-8">
-            CATEGORY : {category}
-          </p>
-
-          <div className="border border-white w-[700px] h-[250px] rounded-2xl flex items-center justify-center text-3xl tracking-widest text-center px-8 shadow-[0_0_20px_rgba(255,255,255,0.2)]">
-            {showResult
-              ? currentQuiz.question
-              : displayText}
-
-            {!isAnswering &&
-              !showResult &&
-              displayText && (
-                <span className="animate-pulse ml-2">
-                  |
-                </span>
-              )}
-          </div>
-
-          {!isAnswering && !showResult && (
-            <p className="mt-8 text-gray-400 animate-pulse">
-              SPACEで早押し
-            </p>
-          )}
+        )}
 
           {/* 回答 */}
           {isAnswering && !showResult && (

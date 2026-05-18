@@ -29,7 +29,7 @@ export default function QuizHome() {
           animate-pulse
         `}
       >
-        君のクイズ
+        僕のクイズ
       </h1>
 
       {/* <p className="text-gray-400 mb-12 tracking-widest">
