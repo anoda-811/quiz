@@ -1,3 +1,9 @@
+export default function AiPage() {
+  return (
+    <div>AI Page</div>
+  )
+}
+
 // "use client";
 
 // import { useState } from "react";
